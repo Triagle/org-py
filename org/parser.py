@@ -208,58 +208,93 @@ def parse(org_string, recognized_todo_keywords={'TODO', 'DONE'}):
 
         current_header = peek(header_stack)
         if drawer_match:
+            # end of drawer?
             if line == ':END:':
                 if current_header is not None:
+                    # push the drawer to the current_header
                     current_header.children.append(open_drawer)
                 else:
+                    # push the drawer to the root document
                     document.append(open_drawer)
                 open_drawer = None
             else:
+                # drawer is not ending, therefore start a new one.
                 open_drawer = Drawer(drawer_match.group(1))
         elif open_drawer is not None and drawer_child_match:
+            # push property to open drawer
             open_drawer.children.append((drawer_child_match.group(1),
                                          drawer_child_match.group(2).strip()))
         elif header_match:
+            # parse and append header
+            # count '*' and set the level to that number
             level = len(header_match.group(1))
             header = Header(level, "", [])
+            # take everything after '*** '
             text = header_match.group(2)
             tags = re.search(tag_re, text)
             todo = None
             priority = None
             if tags:
-                header.set_tags(tags.group(0).split(':')[1:-1])
+                # extract tags from text, and then trim heading text
+                tags_list = tags.group(0).split(':')[1:-1]
+                header.set_tags(tags_list)
                 (start_match, _) = tags.span()
                 text = text[:start_match].strip()
+            # look at first word of text
             todo_keyword = first_word(text)
             if todo_keyword in recognized_todo_keywords:
+                # we recognize the first word as a todo keyword
                 todo = todo_keyword
+                # remove the keyword from heading text
                 text = text[len(todo) + 1:]
+                # attempt to find a priority
                 priority_match = re.match(priority_re, text)
                 if priority_match:
                     priority = priority_match.groups(1)
                     (_, end_match) = priority_match.span()
+                    # strip priority from heading text
                     text = text[end_match + 1:]
             header.priority = priority
             header.todo = todo
+            # parse inline markup
             header.text = parse_markup(text)
+            # below is the magic for dealing with
+            # header hierarchy
             if current_header is None:
+                # if the header stack is empty
+                # just push the current header to the stack
                 header_stack.append(header)
             elif header.level <= current_header.level:
+                # if the newly parsed header supercedes the header
+                # at the top of the stack
+
+                # pop the current header off the stack
                 top_header = header_stack.pop()
+                # continue popping headers off the stack until we reach a header of equal
+                # or greater precendence
                 while header.level <= top_header.level and header_stack != []:
                     top_header = header_stack.pop()
+                # Push the popped header to the document
                 document.append(top_header)
+                # Push new header to the header stack
                 header_stack.append(header)
             else:
+                # if the header is a sub heading of the top header
+                # append the header to the children of top header
                 current_header.children.append(header)
+                # push the header to the stack
                 header_stack.append(header)
         elif current_header is not None and line[:10] == 'SCHEDULED:':
+            # set the current header's scheduled property
             current_header.scheduled = parse_date(line[10:])
         elif current_header is not None and line[:9] == 'DEADLINE:':
+            # set the current header's deadline property
             current_header.deadline = parse_date(line[9:])
         elif directive_match:
+            # if the current line is a directive
             name = directive_match.group(1)
             args = None
+            # directive has arguments?
             if directive_match.lastindex == 2:
                 args = directive_match.group(2)
             directive = Directive(name, args)
@@ -270,6 +305,7 @@ def parse(org_string, recognized_todo_keywords={'TODO', 'DONE'}):
             else:
                 document.append(directive)
         else:
+            # plain and simple line
             markup = parse_markup(line)
 
             if open_drawer:
@@ -278,7 +314,6 @@ def parse(org_string, recognized_todo_keywords={'TODO', 'DONE'}):
                 current_header.children.append(markup)
             else:
                 document.append(markup)
-
-    if len(header_stack) > 0:
-        document += header_stack
+    # Push dangling stack elements to document
+    document += header_stack
     return document
