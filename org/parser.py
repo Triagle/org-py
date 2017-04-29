@@ -94,6 +94,7 @@ def markup_char(char):
         return Style.NONE
 
 def parse_date(date):
+    """ Parse and org mode date stamp. """
     date_re = re.compile(r"<(\d{4})-(\d{2})-(\d{2}) .+?>")
     date = date.strip()
     date_match = re.match(date_re, date)
@@ -101,12 +102,13 @@ def parse_date(date):
         year = date_match.group(1)
         month = date_match.group(2)
         day = date_match.group(3)
-        return datetime.date(year, month, day)
+        return datetime.date(int(year), int(month), int(day))
     else:
         return None
 
     
 def parse_markup(string):
+    """ Parse org mode markup into a Markup object containing multiple elements or links. """
     text_node = None
     markup = []
     index = 0
@@ -170,7 +172,7 @@ def parse(org_string, recognized_todo_keywords={'TODO', 'DONE'}):
     for line in org_string.split('\n'):
 
         header_match = None
-        directive_match = False
+        directive_match = None
         header_match = re.match(header_re, line)
         directive_match = re.match(directive_re, line)
         drawer_match = re.match(drawer_re, line)
@@ -230,7 +232,7 @@ def parse(org_string, recognized_todo_keywords={'TODO', 'DONE'}):
         elif directive_match:
             name = directive_match.group(1)
             args = None
-            if directive_match.lastindex() == 2:
+            if directive_match.lastindex == 2:
                 args = directive_match.group(2)
             directive = Directive(name, args)
             if open_drawer:
