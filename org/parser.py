@@ -16,7 +16,13 @@ class Node():
     def __init__(self, level, children):
         self.level = level
         self.children = children
-        
+
+class Drawer(Node):
+    def __init__(self, name):
+        self.name = name
+        self.children = []
+    def __repr__(self):
+        return "{}: {}".format(self.name, self.children)
 class Header(Node):
     """ Header node. """
 
@@ -140,17 +146,34 @@ def parse(org_string, recognized_todo_keywords={'TODO', 'DONE'}):
     tag_re = re.compile(r":(.+?:)+?$")
     directive_re = re.compile(r"#\+(\w+)(:.*)?$")
     priority_re = re.compile(r" \[#([A-Z])\]")
+    drawer_re = re.compile(r"^:(\w+?):\s*?$")
+    drawer_child_re = re.compile(r"^:(\w+?):\s*?(.+)$")
     header_stack = []
     document = []
+    open_drawer = None
     for line in org_string.split('\n'):
 
         header_match = None
         directive_match = False
         header_match = re.match(header_re, line)
         directive_match = re.match(directive_re, line)
+        drawer_match = re.match(drawer_re, line)
+        drawer_child_match = re.match(drawer_child_re, line)
 
         current_header = peek(header_stack)
-        if header_match:
+        if drawer_match:
+            if line == ':END:':
+                if current_header is not None:
+                    current_header.children.append(open_drawer)
+                else:
+                    document.append(open_drawer)
+                open_drawer = None
+            else:
+                open_drawer = Drawer(drawer_match.group(1))
+        elif open_drawer is not None and drawer_child_match:
+            open_drawer.children.append((drawer_child_match.group(1),
+                                         drawer_child_match.group(2).strip()))
+        elif header_match:
             level = len(header_match.group(1))
             header = Header(level, "", [])
             text = header_match.group(2)
@@ -194,16 +217,22 @@ def parse(org_string, recognized_todo_keywords={'TODO', 'DONE'}):
             if directive_match.lastindex() == 2:
                 args = directive_match.group(2)
             directive = Directive(name, args)
-            if current_header is None:
-                document.append(directive)
-            else:
+            if open_drawer:
+                open_drawer.children.append(directive)
+            elif current_header:
                 current_header.children.append(directive)
+            else:
+                document.append(directive)
         else:
             markup = parse_markup(line)
-            if current_header is None:
-                document.append(markup)
-            else:
+
+            if open_drawer:
+                open_drawer.children.append(markup)
+            elif current_header:
                 current_header.children.append(markup)
+            else:
+                document.append(markup)
+
     if len(header_stack) > 0:
         document += header_stack
     return document
