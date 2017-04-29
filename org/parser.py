@@ -3,6 +3,7 @@ import re
 import datetime
 from enum import Enum
 
+
 class Style(Enum):
     NONE = 1,
     UNDERLINE = 2,
@@ -12,19 +13,26 @@ class Style(Enum):
     CODE = 6,
     VERBATIM = 7
 
+
 class Node():
+    """ Base node class. """
     def __init__(self, level, children):
         self.level = level
         self.children = children
 
+
 class Drawer(Node):
+    """ A node representing a drawer in an org mode document. """
     def __init__(self, name):
         self.name = name
         self.children = []
+
     def __repr__(self):
         return "{}: {}".format(self.name, self.children)
+
+
 class Header(Node):
-    """ Header node. """
+    """ A node representing a heading in an org mode document. """
 
     def __init__(self, level, text, tags):
         self.children = []
@@ -42,10 +50,14 @@ class Header(Node):
     def __repr__(self):
         return "{} {}".format(self.text, self.children)
 
-class Directive():
+
+class Directive(Node):
+    """ A node containing directives describing the org mode document.
+    Examples of a directive might include #+TITLE, which sets the title of the document. """
     def __init__(self, name, args):
         self.name = name
         self.args = args
+
 
 def char_for_style(style):
     markup_dict = {
@@ -59,26 +71,38 @@ def char_for_style(style):
     }
     return markup_dict[style]
 
+
 class Element():
+    """ A style element of representing a block of text. """
     def __init__(self, style, text):
         self.style = style
         self.text = text
+
     def __repr__(self):
         surround = char_for_style(self.style)
         return "{0}{1}{0}".format(surround, self.text)
 
+
 class Link():
+    """ Link element representing an org mode link, both it's url and
+    displayed text. """
     def __init__(self, url, text):
         self.url = url
         self.text = text
+
     def __repr__(self):
         return '[[{}][{}]]'.format(self.url, self.text)
+
+
 class Markup(Node):
+    """ A node containing org mode markup (bold text, links, ...)"""
     def __init__(self, elements):
         self.elements = elements
+
     def __repr__(self):
         return ''.join([repr(el) for el in self.elements])
-    
+
+
 def markup_char(char):
     markup_dict = {
         '_': Style.UNDERLINE,
@@ -93,6 +117,7 @@ def markup_char(char):
     else:
         return Style.NONE
 
+
 def parse_date(date):
     """ Parse and org mode date stamp. """
     date_re = re.compile(r"<(\d{4})-(\d{2})-(\d{2}) .+?>")
@@ -106,7 +131,7 @@ def parse_date(date):
     else:
         return None
 
-    
+
 def parse_markup(string):
     """ Parse org mode markup into a Markup object containing multiple elements or links. """
     text_node = None
@@ -142,7 +167,8 @@ def parse_markup(string):
     if text_node is not None:
         markup.append(Element(Style.NONE, text_node))
     return Markup(markup)
-        
+
+
 def peek(stack):
     """ Take the top element of a list (stack). """
     if len(stack) == 0:
@@ -150,13 +176,15 @@ def peek(stack):
     else:
         return stack[-1]
 
+
 def first_word(text):
     space = text.find(' ')
     if space == -1:
         return text
     else:
         return text[:space]
-    
+
+
 def parse(org_string, recognized_todo_keywords={'TODO', 'DONE'}):
     """ Parse an org mode document. """
 
