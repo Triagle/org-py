@@ -8,7 +8,7 @@ setup (
     url = '',
     author = 'Jake Faulkner',
     author_email = 'jakefaulkn@gmail.com',
-    license = 'MIT',
+    license = 'GPL',
     keywords = 'org-mode',
     packages = find_packages()
 )
