@@ -1,0 +1,49 @@
+#+TITLE: py-org
+
+py-org is an [[http://orgmode.org/][org mode]] parser written in python. The main goal of this
+project is to parse org mode document in a hierarchical manner,
+representative of how humans read the file. The ability to parse
+headings, markup, tables, lists, literal blocks, directives, etc are
+all goals as well.
+
+* Features
+Current features of the parser include:
+
+- Ability to *parse headings* and *associated metadata*. This includes
+  priority, todo states, inline markup on heading titles, tags and
+  level.
+- *Deadline* and *scheduling* support. Tasks with deadlines in an org mode
+  document will have dealines in the parsed representation
+- *Tree representation* of the org mode document. Headings are
+  hierarchical, therefore so is the parsing result.
+- *Markup parsing* and *rendering*. The ability to parse the markup of an
+  org mode document (for instance =/italics/= and =*bold*=) is also
+  featured.
+- *Directive support*. Things like =#+TITLE= and =#+PROPERTY= are
+  recognized, although the data that they contain is not treated
+  specially.
+
+Future feature enhancements will include:
+
+- Table support
+- List support
+- Literal block support
+- Links
+* Usage 
+
+An example of parsing some org mode document
+
+#+BEGIN_SRC python
+  document = """* test
+  This is an org mode document
+  ** sub heading
+  This should be nested underneath the =test= heading
+  * sibling
+  This should be a sibling of the =test= heading
+  """
+  org_document = parse(document)
+
+  # [test [This is an org mode document,
+  #        sub heading [This should be nested underneath the =test= heading]],
+  #  sibling [This should be a sibling of the =test= heading]]
+#+END_SRC
