@@ -67,6 +67,12 @@ class Element():
         surround = char_for_style(self.style)
         return "{0}{1}{0}".format(surround, self.text)
 
+class Link():
+    def __init__(self, url, text):
+        self.url = url
+        self.text = text
+    def __repr__(self):
+        return '[[{}][{}]]'.format(self.url, self.text)
 class Markup(Node):
     def __init__(self, elements):
         self.elements = elements
@@ -104,11 +110,21 @@ def parse_markup(string):
     text_node = None
     markup = []
     index = 0
+    link_re = re.compile(r"\[\s*?\[(.+)?\]\s*?\[(.+)?\]\s*?\]")
     while index < len(string):
         char = string[index]
         style = markup_char(char)
         found_matching = string.find(char, index + 1)
-        if style != Style.NONE and found_matching != -1:
+        link_match = None
+        if char == '[':
+            # Possibly a link
+            link_match = re.match(link_re, string[index:])
+        if link_match:
+            link = Link(link_match.group(1), link_match.group(2))
+            markup.append(link)
+            (_, end_match) = link_match.span()
+            index = end_match
+        elif style != Style.NONE and found_matching != -1:
             # take until terminating character
             if text_node is not None:
                 markup.append(Element(Style.NONE, text_node))
