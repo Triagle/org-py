@@ -23,13 +23,13 @@ Current features of the parser include:
   recognized, although the data that they contain is not treated
   specially.
 - *Drawer support*. Drawers like =:PROPERTIES:= can be parsed.
+- *Link support*. Org mode links are fully supported.
 
 Future feature enhancements will include:
 
 - Table support
 - List support
 - Literal block support
-- Links
 * Usage 
 
 An example of parsing some org mode document
