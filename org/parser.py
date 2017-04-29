@@ -159,7 +159,7 @@ def parse(org_string, recognized_todo_keywords={'TODO', 'DONE'}):
     """ Parse an org mode document. """
 
     header_re = re.compile(r"^(\*+)\s(.*?)\s*$")
-    tag_re = re.compile(r":(.+?:)+?$")
+    tag_re = re.compile(r":([^ ]+?:)+?$")
     directive_re = re.compile(r"#\+(\w+)(:.*)?$")
     priority_re = re.compile(r" \[#([A-Z])\]")
     drawer_re = re.compile(r"^:(\w+?):\s*?$")
